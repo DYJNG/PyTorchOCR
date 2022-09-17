@@ -1,0 +1,101 @@
+Global:
+  use_gpu: True 
+  distributed: True
+  use_amp: False     # if use amp, set distributed False
+  seed: 2022
+  epoch_num: 300
+  log_smooth_window: 20
+  print_batch_step: 20
+  save_model_dir: ./output/cls/cls_mbv3large/
+  ckpt_save_type: HighestAcc   # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
+  save_epoch_step: 100
+  # evaluation is run every 1 epoch
+  eval_epoch_step: [0, 1]
+  cal_metric_during_train: True
+  pretrained_model:
+  checkpoints:
+  use_tensorboard: True
+  label_list: ["0", "180"]
+  
+Architecture:
+  model_type: cls
+  algorithm: CLS
+  Transform:
+  Backbone:
+    name: MobileNetV3
+    model_name: small
+    width_mult: 0.35
+    use_se: True
+    pretrained: False
+    ckpt_path: 
+  Neck:
+  Head:
+    name: ClsHead
+    class_dim: 2
+
+Loss:
+  name: ClsLoss
+
+Optimizer:
+  base_lr: 0.001
+  optim:
+    name: Adam  # torch.optim
+    betas: !!python/tuple [0.9, 0.999]
+    weight_decay: 0
+    amsgrad: True  # refer DBNet.pytorch
+  lr_decay:
+    name: WarmupPolyLR
+    warmup_epoch: 3
+    power: 0.9
+
+PostProcess:
+  name: ClsPostProcess
+
+Metric:
+  name: ClsMetric
+  main_indicator: acc
+
+Train:
+  dataset:
+    name: SimpleDataSet
+    label_file_list:
+      - .../文本行方向分类数据集/val_label.txt
+    transforms:
+      - DecodeImage: # load image
+          img_mode: RGB
+          channel_first: False
+      - ClsLabelEncode: # Class handling label
+      - RecAug:
+          use_tia: False
+      - RandAugment:
+      - ClsResizeImg:
+          image_shape: [3, 48, 192]
+      - KeepKeys:
+          keep_keys: ["image", "label"] # dataloader will return list in this order
+  loader:
+    shuffle: True
+    batch_size_per_card: 512
+    drop_last: True
+    num_workers: 8
+    pin_memory: True
+
+Eval:
+  dataset:
+    name: SimpleDataSet
+    label_file_list:
+      - .../文本行方向分类数据集/val_label.txt
+    transforms:
+      - DecodeImage: # load image
+          img_mode: RGB
+          channel_first: False
+      - ClsLabelEncode: # Class handling label
+      - ClsResizeImg:
+          image_shape: [3, 48, 192]
+      - KeepKeys:
+          keep_keys: ["image", "label"] # dataloader will return list in this order
+  loader:
+    shuffle: False
+    drop_last: False
+    batch_size_per_card: 512
+    num_workers: 4
+    pin_memory: True

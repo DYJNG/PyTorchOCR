@@ -1,0 +1,160 @@
+Global:
+  use_gpu: True
+  distributed: True
+  use_amp: False     # if use amp, set distributed False
+  seed: 2022
+  epoch_num: 300
+  log_smooth_window: 20
+  print_batch_step: 20
+  save_model_dir: ./output/rec/vggv1x1.0_bilstm_ctc_distill_dml/
+  ckpt_save_type: HighestAcc   # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
+  save_epoch_step: 100
+  # evaluation is run every 1 epoch
+  eval_epoch_step: [0, 1]
+  cal_metric_during_train: True
+  pretrained_model:
+  checkpoints:
+  use_tensorboard: True
+  character_dict_path: ./pytocr/utils/char_dict_6623.txt     # 预处理encoder和后处理decoder需要
+  max_text_length: 25
+  cn2en: False
+  use_space_char: False
+
+Architecture:
+  model_type: &model_type "rec"
+  name: DistillationModel
+  algorithm: Distillation
+  Models:
+    Student:
+      in_channels: 1  # Gray image
+      pretrained:
+      freeze_params: False
+      return_all_feats: True   # 返回 backbone,neck,head 组件的输出
+      model_type: *model_type
+      algorithm: CRNN
+      Transform:
+      Backbone:
+        name: VGG
+        model_name: v1
+        scale: 0.5
+        pretrained: False
+        ckpt_path: 
+      Neck:
+        name: SequenceEncoder
+        encoder_type: rnn
+        hidden_size: 96
+      Head:
+        name: CTCHead
+    Student2:
+      in_channels: 1  # Gray image
+      pretrained:
+      freeze_params: False
+      return_all_feats: True
+      model_type: *model_type
+      algorithm: CRNN
+      Transform:
+      Backbone:
+        name: VGG
+        model_name: v1
+        scale: 0.5
+        pretrained: False
+        ckpt_path: 
+      Neck:
+        name: SequenceEncoder
+        encoder_type: rnn
+        hidden_size: 96
+      Head:
+        name: CTCHead
+
+Loss:
+  name: CombinedLoss
+  loss_config_list:
+  - DistillationCTCLoss:
+      weight: 1.0
+      model_name_list: ["Student", "Student2"]
+      key: head_out
+  - DistillationDMLLoss:
+      weight: 1.0
+      act: "softmax"
+      use_log: True
+      model_name_pairs:
+      - ["Student", "Student2"]
+      key: head_out
+  - DistillationDistanceLoss:
+      weight: 1.0
+      mode: "l2"
+      model_name_pairs:
+      - ["Student", "Student2"]
+      key: backbone_out
+
+Optimizer:
+  base_lr: 0.001
+  optim:
+    name: Adam  # torch.optim
+    betas: !!python/tuple [0.9, 0.999]
+    weight_decay: 0
+    amsgrad: True  # refer DBNet.pytorch
+  lr_decay:
+    name: WarmupPolyLR
+    warmup_epoch: 3
+    power: 0.9
+
+PostProcess:
+  name: DistillationCTCLabelDecode
+  model_name: ["Student", "Student2"]
+  key: head_out
+
+Metric:
+  name: DistillationMetric
+  base_metric_name: RecMetric
+  main_indicator: acc
+  keys: ["Student", "Student2"]
+
+Train:
+  dataset:
+    name: SimpleDataSet
+    label_file_list:
+      - .../文本识别数据集1/train_label.txt
+      - .../文本识别数据集2/train_label.txt
+      - .../文本识别数据集3/train_label.txt
+    ratio_list: 1.0 #[1.0, 0.8, 0.5]
+    transforms:
+      - DecodeImage: # load image
+          img_mode: GRAY
+          channel_first: False
+      - RecAug:
+      - CTCLabelEncode: # Class handling label
+      - RecResizeImg:
+          image_shape: [1, 32, 320]
+      - KeepKeys:
+          keep_keys: ["image", "label", "length"] # dataloader will return list in this order
+  loader:
+    shuffle: True
+    batch_size_per_card: 128
+    drop_last: True
+    num_workers: 8
+    pin_memory: True
+
+Eval:
+  dataset:
+    name: SimpleDataSet
+    label_file_list:
+      - .../文本识别数据集1/val_label.txt
+      - .../文本识别数据集2/val_label.txt
+      - .../文本识别数据集3/val_label.txt
+    ratio_list: 1.0
+    transforms:
+      - DecodeImage: # load image
+          img_mode: GRAY
+          channel_first: False
+      - CTCLabelEncode: # Class handling label
+      - RecResizeImg:
+          image_shape: [1, 32, 320]
+      - KeepKeys:
+          keep_keys: ["image", "label", "length"] # dataloader will return list in this order
+  loader:
+    shuffle: False
+    drop_last: False
+    batch_size_per_card: 128
+    num_workers: 4
+    pin_memory: True

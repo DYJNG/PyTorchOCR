@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+.ipynb_checkpoints/
+
+# C extensions
+*.so
+
+output/
+*.log
+*.pth
+
+*.DS_Store
+*.vs
+*.user
+*~
+*.vscode
+*.idea
+
+build/

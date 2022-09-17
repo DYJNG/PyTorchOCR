@@ -1,0 +1,183 @@
+Global:
+  use_gpu: True
+  distributed: True
+  use_amp: False     # if use amp, set distributed False
+  seed: 2022
+  epoch_num: 300
+  log_smooth_window: 20
+  print_batch_step: 20
+  save_model_dir: ./output/det/db_mbv3_dml/
+  ckpt_save_type: HighestAcc   # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
+  save_epoch_step: 100
+  # evaluation is run every 5000 iterations after the 4000th iteration
+  # eval_batch_step: [3000, 2000]
+  # evaluation is run every 1 epoch
+  eval_epoch_step: [0, 1]
+  cal_metric_during_train: False
+  pretrained_model: 
+  checkpoints:
+  use_tensorboard: True
+
+Architecture:
+  name: DistillationModel
+  algorithm: Distillation
+  model_type: det
+  Models:
+    Student:
+      pretrained:
+      freeze_params: False
+      return_all_feats: False
+      model_type: det
+      algorithm: DB
+      Backbone:
+        name: MobileNetV3
+        model_name: large
+        width_mult: 0.5
+        use_se: False
+      Neck:
+        name: FPN
+        out_channels: 96
+        mode: DB
+      Head:
+        name: DBHead
+        k: 50
+    Student2:
+      pretrained:
+      freeze_params: False
+      return_all_feats: False
+      model_type: det
+      algorithm: DB
+      Transform:
+      Backbone:
+        name: MobileNetV3
+        model_name: large
+        width_mult: 0.5
+        use_se: False
+      Neck:
+        name: FPN
+        out_channels: 96
+        mode: DB
+      Head:
+        name: DBHead
+        k: 50
+    
+Loss:
+  name: CombinedLoss
+  loss_config_list:
+  - DistillationDMLLoss:
+      model_name_pairs:
+      - ["Student", "Student2"]
+      maps_name: "shrink_maps"
+      weight: 1.0
+      act: "softmax"
+      key: maps
+  - DistillationDBLoss:
+      weight: 1.0
+      model_name_list: ["Student", "Student2"]
+      balance_loss: True
+      main_loss_type: BCELoss
+      alpha: 1
+      beta: 10
+      ohem_ratio: 3
+
+Optimizer:
+  base_lr: 0.001
+  optim:
+    name: Adam  # torch.optim
+    betas: !!python/tuple [0.9, 0.999]
+    weight_decay: 0
+    amsgrad: True  # refer DBNet.pytorch
+  lr_decay:
+    name: WarmupPolyLR
+    warmup_epoch: 3
+    power: 0.9
+
+PostProcess:
+  name: DistillationDBPostProcess
+  model_name: ["Student", "Student2"]
+  # key: maps
+  thresh: 0.3
+  box_thresh: 0.5
+  max_candidates: 1000
+  unclip_ratio: 1.7
+  score_mode: poly      # "box" or "poly"
+  cpp_speedup: True     # if windows, must be set to False
+  out_polygon: False    # if output polygon format, set cpp_speedup False
+
+Metric:
+  name: DistillationMetric
+  base_metric_name: DetMetric
+  main_indicator: hmean
+  keys: ["Student", "Student2"]
+
+Train:
+  dataset:
+    name: SimpleDataSet
+    label_file_list:
+      - .../文本检测数据集1/train_label.txt
+      - .../文本检测数据集2/train_label.txt
+      - .../文本检测数据集3/train_label.txt
+    ratio_list: 1.0 #[1.0, 0.8, 0.5]
+    transforms:
+      - DecodeImage: # load image
+          img_mode: RGB
+          channel_first: False
+      - DetLabelEncode: # Class handling label
+          ignore_txt: ["###", "#####"]    #["*", "###"]
+      - IaaAugment:
+          augmenter_args:
+            - { "type": Fliplr, "args": { "p": 0.5 } }
+            - { "type": Affine, "args": { "rotate": [-10, 10] } }
+            - { "type": Resize, "args": { "size": [0.5, 3] } }
+      - EastRandomCropData:
+          size: [640, 640]
+          max_tries: 50
+          keep_ratio: True
+      - MakeBorderMap:
+          shrink_ratio: 0.45
+          thresh_min: 0.3
+          thresh_max: 0.7
+      - MakeShrinkMap:
+          shrink_ratio: 0.45
+          min_text_size: 8
+      - ToTensor: # 包含/255、ToCHWImage、ToTensor功能
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+      - KeepKeys:
+          keep_keys: ["image", "threshold_map", "threshold_mask", "shrink_map", "shrink_mask"] # the order of the dataloader list
+  loader:
+    shuffle: True
+    drop_last: False
+    batch_size_per_card: 12
+    num_workers: 8
+
+Eval:
+  dataset:
+    name: SimpleDataSet
+    label_file_list:
+      - .../文本检测数据集1/val_label.txt
+      - .../文本检测数据集2/val_label.txt
+      - .../文本检测数据集3/val_label.txt
+    ratio_list: 1.0
+    transforms:
+      - DecodeImage: # load image
+          img_mode: RGB
+          channel_first: False
+      - DetLabelEncode: # Class handling label
+          ignore_txt: ["###", "#####"]    #["*", "###"]
+      - DetResizeForTest:
+#           image_shape: [736, 1280]
+          limit_side_len: 736
+          limit_type: "min"
+      - ToTensor: # 包含/255、ToCHWImage、ToTensor功能
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+      - KeepKeys:
+          keep_keys: ["image", "shape", "polys", "ignore_tags"]
+  loader:
+    shuffle: False
+    drop_last: False
+    batch_size_per_card: 1 # must be 1
+    num_workers: 4
