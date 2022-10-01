@@ -490,7 +490,7 @@ def preprocess(is_train=False):
 
     alg = config["Architecture"]["algorithm"]
     assert alg in [
-        "DB", "PSE", "PAN", "CRNN", "CLS", "Distillation"
+        "DB", "PSE", "PAN", "CRNN", "STARNet", "CLS", "Distillation"
     ] # TODO: add new alg
 
     device = torch.device("cuda:{}".format(args.local_rank) if use_gpu else "cpu")

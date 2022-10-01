@@ -13,6 +13,7 @@ PyTorchOCR是一套基于PyTorch的实用OCR工具库。
         - [x] PANet & PANet++ (trade-off)
     - OCR识别
         - [x] CRNN
+        - [x] STAR-Net（TPS-场景文本识别）
     - 方向分类
         - [x] 文本行方向分类
     - 关键字段提取
@@ -31,6 +32,7 @@ PyTorchOCR是一套基于PyTorch的实用OCR工具库。
 
 ***
 ## 近期更新
+- 2022.10.01 支持OCR识别STAR-Net，新增TPS识别transforms。
 - 2022.08.26 新增onnx、tensorrt转换脚本及推理代码。
 - 2022.08.22 新增pytorch推理代码。
 - 2022.06.13 新增det_swin、det_convnext检测backbone。
@@ -49,22 +51,37 @@ PyTorchOCR是一套基于PyTorch的实用OCR工具库。
 ## 模型效果
 - ### 文本检测（测试时输入尺寸统一设置为：短边固定736，长边等比例resize。若增大输入尺寸，则指标会有一定提升。）
     - ICDAR-2015
-        |模型|骨干网络|大小|precision|recall|hmean|model|
-        |:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-        |DB|r50|98M|86.93|73.95|79.92|[download]()|
-        |DB|r18|48M|85.57|73.38|79.00|[download]()|
-        |DB|mbv3smallx1.0|4.5M|80.34|56.86|66.5|[download]()|
-        |DB|mbv3smallx1.0_distill|4.5M|82.88|52.67|64.41|[download]()|
-        |DB|mbv3smallx1.0_dml|4.5M|79.89|58.35|67.45|[download]()|
-        |DB|mbv3smallx1.0_cml|4.5M|82.16|59.41|68.96|[download]()|
-        |DB++|r18|48M|86.00|73.62|79.33|[download]()|
-        |PSE|r50|112M|79.45|75.20|77.27|[download]()|
-        |PA++|r18|47M|82.79|75.25|78.84|[download]()|
+        |模型|骨干网络|大小|precision|recall|hmean|
+        |:-:|:-:|:-:|:-:|:-:|:-:|
+        |DB|r50|98M|86.93|73.95|79.92|
+        |DB|r18|48M|85.57|73.38|79.00|
+        |DB|mbv3smallx1.0|4.5M|80.34|56.86|66.5|
+        |DB|mbv3smallx1.0_distill|4.5M|82.88|52.67|64.41|
+        |DB|mbv3smallx1.0_dml|4.5M|79.89|58.35|67.45|
+        |DB|mbv3smallx1.0_cml|4.5M|82.16|59.41|68.96|
+        |DB++|r18|48M|86.00|73.62|79.33|
+        |PSE|r50|112M|79.45|75.20|77.27|
+        |PA++|r18|47M|82.79|75.25|78.84|
 ***
-- ### 文本识别
+- ### 文本识别（TODO）
     - ICDAR-2015
         |模型|骨干网络|大小|score|map|
         |-|-|-|-|-|
+***
+- ### 模型下载（提取码：t5w4）
+    - OCR检测（训练数据主要来自天池“MTWI-2018”+“英特尔创新大师杯”OCR竞赛）
+        |模型|骨干网络|大小|model|
+        |:-:|:-:|:-:|:-:|
+        |DB|r50|98M|[ckpts/det/torch/db_r18.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
+        |DB|r18|48M|[ckpts/det/torch/db_r50.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
+        |DB|mbv3large_x1.0_cml|13M|[ckpts/det/torch/db_mbv3large_x1.0_cml.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
+        |DB++|r18|48M|[ckpts/det/torch/dbplusplus_r18.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
+        |PSE|r50|112M|[ckpts/det/torch/pse_r50.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
+        |PA++|r18|47M|[ckpts/det/torch/paplusplus_r18.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
+    - OCR识别（训练数据主要来自生成（200W+文本行）+天池“英特尔创新大师杯”OCR竞赛）
+        |模型|骨干网络|大小|model|
+        |:-:|:-:|:-:|:-:|
+        |CRNN|vgg_v1_x1.0_gray|45M|[ckpts/rec/crnn_vgg_v1_x1.0_gray_6623.pth](https://pan.baidu.com/s/1IQu2vv5sS8lHdvXPRtgvsA)|
 ***
 - ### 结果展示
 <img src="figs/wlms.png" width="730px"/> 
