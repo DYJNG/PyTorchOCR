@@ -6,9 +6,9 @@ from pycuda.compiler import SourceModule
 
 def get_engine(trt_path):
     TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-    print(f'Reading engine from file {trt_path}')
+    print(f"Reading engine from file {trt_path}")
     runtime = trt.Runtime(TRT_LOGGER)
-    with open(trt_path,'rb') as f:
+    with open(trt_path, "rb") as f:
         return runtime.deserialize_cuda_engine(f.read())  # 反序列化（解码）-> 模型
     
     

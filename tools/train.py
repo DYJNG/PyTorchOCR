@@ -57,15 +57,16 @@ def main(config, device, local_rank, logger, tsb_writer):
     # amp
     use_amp = config["Global"].get("use_amp", False)
     if not use_amp:
-        # parallel  DP and DDP
-        if not config["Global"]["distributed"]:
-            model = torch.nn.DataParallel(model)
-        else:   # distribute
-            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)  ## 同步bn
-            model = torch.nn.parallel.DistributedDataParallel(
-                model, 
-                device_ids=[local_rank], 
-                output_device=local_rank)
+        if config["Global"]["use_gpu"]:
+            # parallel  DP and DDP
+            if not config["Global"]["distributed"]:
+                model = torch.nn.DataParallel(model)
+            else:   # distribute
+                model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)  ## 同步bn
+                model = torch.nn.parallel.DistributedDataParallel(
+                    model, 
+                    device_ids=[local_rank], 
+                    output_device=local_rank)
     model.train()
 
     # build loss
@@ -85,17 +86,18 @@ def main(config, device, local_rank, logger, tsb_writer):
     if use_amp:
         from apex import amp
         model, optimizer = amp.initialize(model, optimizer)
-        # parallel  DP and DDP
-        if not config["Global"]["distributed"]:
-            model = torch.nn.DataParallel(model)
-        else:
-            # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)  ## 同步bn
-            # model = torch.nn.parallel.DistributedDataParallel(
-            #     model, 
-            #     device_ids=[local_rank], 
-            #     output_device=local_rank)
-            from apex.parallel import DistributedDataParallel
-            model = DistributedDataParallel(model)    # BUG
+        if config["Global"]["use_gpu"]:
+            # parallel  DP and DDP
+            if not config["Global"]["distributed"]:
+                model = torch.nn.DataParallel(model)
+            else:
+                # model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)  ## 同步bn
+                # model = torch.nn.parallel.DistributedDataParallel(
+                #     model, 
+                #     device_ids=[local_rank], 
+                #     output_device=local_rank)
+                from apex.parallel import DistributedDataParallel
+                model = DistributedDataParallel(model)    # BUG
         
     # load pretrain model
     model, optimizer, global_state = load_model(config, model, optimizer, device)

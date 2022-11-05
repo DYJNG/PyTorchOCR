@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 from functools import partial
 from torch import nn, Tensor
-from torch.nn import functional as F
+import torch.nn.functional as F
 from typing import Callable, List, Optional, Sequence
 
 from torchvision.models.utils import load_state_dict_from_url
@@ -232,7 +232,7 @@ class MobileNetV3(nn.Module):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out")
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
-            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+            elif isinstance(m, (nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm)):
                 nn.init.ones_(m.weight)
                 nn.init.zeros_(m.bias)
             elif isinstance(m, nn.Linear):

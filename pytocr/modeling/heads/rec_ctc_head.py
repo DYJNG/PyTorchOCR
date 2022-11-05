@@ -1,6 +1,6 @@
 
 from torch import nn
-from torch.nn import functional as F
+import torch.nn.functional as F
 
 
 class CTCHead(nn.Module):

@@ -78,7 +78,7 @@ def draw_rec_res(text, prob, img_path, save_path):
     w, h = pilimg.size
     draw = ImageDraw.Draw(pilimg)  # 图片上打印
     font_size = int(max(min(30, h-5), 10))
-    font = ImageFont.truetype("fs_GB2312.ttf", font_size, encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小  显示汉字
+    font = ImageFont.truetype("fs_GB2312.ttf", font_size, encoding="UTF-8")  # 参数1：字体文件路径，参数2：字体大小  显示汉字
     draw.text((2, 2), text + "," + str(prob), (0, 0, 255), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
     pilimg.save(save_path)
 
@@ -92,7 +92,7 @@ def draw_cls_res(pred_cls, prob, img_path, save_path):
     w, h = pilimg.size
     draw = ImageDraw.Draw(pilimg)  # 图片上打印
     font_size = int(max(min(30, h-5), 10))
-    font = ImageFont.truetype("fs_GB2312.ttf", font_size, encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小  显示汉字
+    font = ImageFont.truetype("fs_GB2312.ttf", font_size, encoding="UTF-8")  # 参数1：字体文件路径，参数2：字体大小  显示汉字
     draw.text((2, 2), pred_cls + "," + str(prob), (0, 0, 255), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
     pilimg.save(save_path)
 
@@ -112,7 +112,7 @@ def draw_ocr_res(ocr_res, img_path, save_path):
             draw = ImageDraw.Draw(pilimg)  # 图片上打印
             h = min(cv2.minAreaRect(box.reshape((-1, 2)))[1])
             font_size = int(max(min(30, h-5), 10))
-            font = ImageFont.truetype("fs_GB2312.ttf", font_size, encoding="utf-8")  # 参数1：字体文件路径，参数2：字体大小
+            font = ImageFont.truetype("fs_GB2312.ttf", font_size, encoding="UTF-8")  # 参数1：字体文件路径，参数2：字体大小
             draw.text((ori_box[0][0], max(0, ori_box[0][1] - 10)), text + "," + str(prob), (0, 0, 255), font=font)  # 参数1：打印坐标，参数2：文本，参数3：字体颜色，参数4：字体
             img = cv2.cvtColor(np.array(pilimg), cv2.COLOR_RGB2BGR)
     cv2.imwrite(save_path, img)

@@ -5,7 +5,7 @@ https://github.com/clovaai/deep-text-recognition-benchmark/blob/master/modules/t
 
 import torch
 from torch import nn
-from torch.nn import functional as F
+import torch.nn.functional as F
 import numpy as np
 
 

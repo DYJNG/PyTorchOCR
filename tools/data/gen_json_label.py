@@ -25,7 +25,7 @@ def get_boxes(img_path, label_path, sort_pts=False):
     if sort_pts:
         img_h, img_w = cv2.imdecode(
             np.fromfile(img_path, dtype=np.uint8), cv2.IMREAD_COLOR).shape[:2]
-    with open(label_path, "r", encoding="utf-8") as fid:
+    with open(label_path, "r", encoding="UTF-8") as fid:
         lines = fid.readlines()
         for line in lines:
             line = line.replace("\ufeff", "").replace(

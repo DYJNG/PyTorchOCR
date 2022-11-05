@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import torch
-from torch.nn import functional as F
+import torch.nn.functional as F
 
 from pytocr.postprocess.pan_postprocess_fast import pa
 from pytocr.utils.utility import order_points_clockwise

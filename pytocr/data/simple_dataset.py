@@ -74,7 +74,7 @@ class SimpleDataSet(Dataset):
             file_idx = self.data_idx_order_list[np.random.randint(self.__len__(
             ))]
             data_line = self.data_lines[file_idx]
-            data_line = data_line.decode("utf-8")
+            data_line = data_line.decode("UTF-8")
             substr = data_line.strip("\n").split(self.delimiter)
             img_path = substr[0]   # absolute path
             label = substr[1]
@@ -95,7 +95,7 @@ class SimpleDataSet(Dataset):
         file_idx = self.data_idx_order_list[idx]
         data_line = self.data_lines[file_idx]
         try:
-            data_line = data_line.decode("utf-8")
+            data_line = data_line.decode("UTF-8")
             substr = data_line.strip("\n").split(self.delimiter)
             img_path = substr[0]   # absolute path
             label = substr[1]

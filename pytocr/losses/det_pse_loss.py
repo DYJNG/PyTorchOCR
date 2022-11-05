@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from torch.nn import functional as F
+import torch.nn.functional as F
 
 from .det_basic_loss import DiceLoss, IoU, OHEM_BATCH
 
