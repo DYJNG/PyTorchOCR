@@ -12,6 +12,8 @@ from .ColorJitter import ColorJitter
 from .operators import *
 from .label_ops import *
 
+from .table_ops import *
+
 
 
 def transform(data, ops=None):

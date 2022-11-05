@@ -295,8 +295,11 @@ def train(config, device, local_rank,
             # cal trainning metric (only rec and cls need)
             if cal_metric_during_train and model_type is not "det":
                 batch = [item.detach().cpu().numpy() if isinstance(item, torch.Tensor) else item.numpy() for item in batch]
-                if model_type in ["table", "kie"]:
+                if model_type in ["kie"]:
                     eval_class(preds, batch)
+                elif model_type in ["table"]:
+                    post_result = post_process_class(preds, batch)
+                    eval_class(post_result, batch)
                 else:
                     post_result = post_process_class(preds, batch[1])
                     eval_class(post_result, batch)
@@ -450,8 +453,11 @@ def eval(model,
             # Obtain usable results from post-processing methods
             total_time += time.time() - start
             # Evaluate the results of the current batch
-            if model_type in ["table", "kie"]:
+            if model_type in ["kie"]:
                 eval_class(preds, batch)
+            elif model_type in ["table"]:
+                post_result = post_process_class(preds, batch)
+                eval_class(post_result, batch)
             else:
                 post_result = post_process_class(preds, batch[1])
                 eval_class(post_result, batch)
@@ -490,7 +496,7 @@ def preprocess(is_train=False):
 
     alg = config["Architecture"]["algorithm"]
     assert alg in [
-        "DB", "PSE", "PAN", "CRNN", "STARNet", "CLS", "Distillation"
+        "DB", "PSE", "PAN", "CRNN", "STARNet", "CLS", "Distillation", "SLANet"
     ] # TODO: add new alg
 
     device = torch.device("cuda:{}".format(args.local_rank) if use_gpu else "cpu")

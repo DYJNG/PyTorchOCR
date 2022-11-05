@@ -1,16 +1,18 @@
 __all__ = ["build_backbone"]
 
 def build_backbone(config, model_type):
-    if model_type == "det":
+    if model_type == "det" or model_type == "table":
         from .det_resnet import ResNet
         from .det_mobilenet_v3 import MobileNetV3
         from .det_shufflenet_v2 import ShuffleNetV2
         from .det_repvgg import RepVGG
         from .det_convnext import ConvNeXt
         from .det_swin import SwinTransformer
+        from .det_pplcnet import PPLCNet
         support_dict = [
             "ResNet", "MobileNetV3", "ShuffleNetV2", 
-            "RepVGG", "ConvNeXt", "SwinTransformer"
+            "RepVGG", "ConvNeXt", "SwinTransformer", 
+            "PPLCNet"
         ]
     elif model_type == "rec" or model_type == "cls":
         from .rec_vgg import VGG

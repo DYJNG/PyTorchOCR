@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, DistributedSampler
 
 from pytocr.data.imaug import transform, create_operators
 from pytocr.data.simple_dataset import SimpleDataSet
+from pytocr.data.pubtab_dataset import PubTabDataSet
 
 __all__ = ["build_dataloader", "transform", "create_operators"]
 
@@ -10,7 +11,7 @@ __all__ = ["build_dataloader", "transform", "create_operators"]
 def build_dataloader(config, mode, logger, seed=None):
     config = copy.deepcopy(config)
 
-    support_dict = ["SimpleDataSet"]
+    support_dict = ["SimpleDataSet", "PubTabDataSet"]
     module_name = config[mode]["dataset"]["name"]
     assert module_name in support_dict, Exception(
         "DataSet only support {}".format(support_dict))

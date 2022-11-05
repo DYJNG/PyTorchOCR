@@ -1,0 +1,144 @@
+Global:
+  use_gpu: True
+  distributed: True
+  use_amp: False     # if use amp, set distributed False
+  seed: 2022
+  epoch_num: 300
+  log_smooth_window: 20
+  print_batch_step: 20
+  save_model_dir: ./output/table/table_sla_ch/
+  ckpt_save_type: HighestAcc   # HighestAcc：只保存最高准确率模型 ；FixedEpochStep：每隔ckpt_save_epoch个epoch保存一个
+  save_epoch_step: 100
+  # evaluation is run every 1 epoch
+  eval_epoch_step: [0, 1]
+  cal_metric_during_train: True
+  pretrained_model:       # finetune
+  checkpoints:            # resume
+  use_tensorboard: True
+  # for data or label process
+  character_dict_path: ./pytocr/utils/table_structure_dict_ch.txt
+  character_type: en
+  max_text_length: &max_text_length 500
+  box_format: &box_format xyxyxyxy # 'xywh', 'xyxy', 'xyxyxyxy'
+
+Architecture:
+  model_type: table
+  algorithm: SLANet
+  Transform:
+  Backbone:
+    name: PPLCNet
+    scale: 1.0
+    pretrained: False
+    ckpt_path: 
+  Neck:
+    name: CSPPAN
+    out_channels: 96
+    mode: table
+  Head:
+    name: SLAHead
+    hidden_size: 256
+    max_text_length: *max_text_length
+    loc_reg_num: &loc_reg_num 8
+
+Loss:
+  name: SLALoss
+  structure_weight: 1.0
+  loc_weight: 2.0
+  loc_loss_type: smooth_l1   # [mse, smooth_l1]
+
+Optimizer:
+  base_lr: 0.001
+  optim:
+    name: Adam  # torch.optim
+    betas: !!python/tuple [0.9, 0.999]
+    weight_decay: 0
+    amsgrad: True  # refer DBNet.pytorch
+  lr_decay:
+    name: WarmupPolyLR
+    warmup_epoch: 3
+    power: 0.9
+
+PostProcess:
+  name: TableLabelDecode
+  merge_no_span_structure: &merge_no_span_structure True
+
+Metric:
+  name: TableMetric
+  main_indicator: acc
+  compute_bbox_metric: False
+  loc_reg_num: *loc_reg_num
+  box_format: *box_format
+  del_thead_tbody: True
+
+Train:
+  dataset:
+    name: PubTabDataSet
+    label_file_list:
+      - .../表格识别数据集1/train_label.txt
+      - .../表格识别数据集2/train_label.txt
+      - .../表格识别数据集3/train_label.txt
+    ratio_list: 1.0 #[1.0, 0.8, 0.5]
+    transforms:
+      - DecodeImage: # load image
+          img_mode: RGB
+          channel_first: False
+      - TableLabelEncode:
+          learn_empty_box: False
+          merge_no_span_structure: *merge_no_span_structure
+          replace_empty_cell_token: False
+          loc_reg_num: *loc_reg_num
+          max_text_length: *max_text_length
+      - ResizeTableImage:
+          max_len: 480  # 32的整数倍
+          use_padding: True
+      - TableBoxEncode:
+          in_box_format: *box_format
+          out_box_format: *box_format
+      - ToTensor: # 包含/255、ToCHWImage、ToTensor功能
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+      - KeepKeys:
+          keep_keys: ["image", "structure", "bboxes", "bbox_masks", "shape"] # the order of the dataloader list
+  loader:
+    shuffle: True
+    drop_last: False
+    batch_size_per_card: 48
+    num_workers: 8
+
+Eval:
+  dataset:
+    name: PubTabDataSet
+    label_file_list:
+      - .../表格识别数据集1/val_label.txt
+      - .../表格识别数据集2/val_label.txt
+      - .../表格识别数据集3/val_label.txt
+    ratio_list: 1.0
+    transforms:
+      - DecodeImage: # load image
+          img_mode: RGB
+          channel_first: False
+      - TableLabelEncode:
+          learn_empty_box: False
+          merge_no_span_structure: *merge_no_span_structure
+          replace_empty_cell_token: False
+          loc_reg_num: *loc_reg_num
+          max_text_length: *max_text_length
+      - ResizeTableImage:
+          max_len: 480
+          use_padding: True
+      - TableBoxEncode:
+          in_box_format: *box_format
+          out_box_format: *box_format
+      - ToTensor: # 包含/255、ToCHWImage、ToTensor功能
+      - Normalize:
+          mean: [0.485, 0.456, 0.406]
+          std: [0.229, 0.224, 0.225]
+      - KeepKeys:
+          keep_keys: ["image", "structure", "bboxes", "bbox_masks", "shape"]
+  loader:
+    shuffle: False
+    drop_last: False
+    batch_size_per_card: 48 # must be 1
+    num_workers: 4
+    

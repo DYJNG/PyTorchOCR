@@ -12,8 +12,12 @@ def build_head(config):
     # cls head
     from .cls_head import ClsHead
 
+    # table head
+    from .table_att_head import SLAHead
+
     support_dict = [
-        "DBHead", "PSEHead", "PANHead", "CTCHead", "ClsHead"
+        "DBHead", "PSEHead", "PANHead", "CTCHead", "ClsHead", 
+        "SLAHead"
     ]
 
     module_name = config.pop("name")

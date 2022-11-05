@@ -23,13 +23,14 @@ from .basic_loss import DistanceLoss
 # combined loss function
 from .combined_loss import CombinedLoss
 
-# # table loss
-# from .table_att_loss import TableAttentionLoss
+# table loss
+from .table_att_loss import SLALoss
 
 
 def build_loss(config):
     support_dict = [
-        "DBLoss", "PSELoss", "PANLoss", "CTCLoss", "ClsLoss", "CombinedLoss"
+        "DBLoss", "PSELoss", "PANLoss", "CTCLoss", "ClsLoss", "CombinedLoss", 
+        "SLALoss"
     ]
     config = copy.deepcopy(config)    # 因为后面pop会改变config
     module_name = config.pop("name")
